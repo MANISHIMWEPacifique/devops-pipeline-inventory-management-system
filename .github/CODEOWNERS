@@ -1,9 +1,9 @@
 # Default owners for everything in the repo
-* @team-member1 @team-member2
+* @MANISHIMWEPacifique @Karamuzi
 
 # Infrastructure code
-/terraform/ @infrastructure-engineer
-/ansible/ @configuration-manager
+/terraform/ @MANISHIMWEPacifique
+/ansible/ @karamuzi
 
 # CI/CD pipelines
 /.github/workflows/ @devops-engineer
