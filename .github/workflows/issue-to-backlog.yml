@@ -1,0 +1,15 @@
+name: Move new issues to Backlog
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add_to_project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add issue to Backlog
+        uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/users/MANISHIMWEPacifique/projects/2
+          github-token: ${{ secrets.GITHUB_TOKEN }}
