@@ -137,3 +137,182 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# ============================================
+# Terraform
+# ============================================
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files contain sensitive data
+*.tfstate
+*.tfstate.*
+
+# Terraform lock file (some teams commit this, adjust as needed)
+.terraform.lock.hcl
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (contain secrets/sensitive data)
+*.tfvars
+*.tfvars.json
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Terraform plan output files
+*.tfplan
+
+# ============================================
+# Ansible
+# ============================================
+# Retry files
+*.retry
+
+# Python cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Ansible facts cache
+**/ansible_facts/
+/tmp/ansible_facts
+
+# Ansible vault password files
+.vault_pass
+.vault_password
+
+# Ansible roles downloaded via galaxy
+roles/external/
+
+# ============================================
+# Docker
+# ============================================
+# Docker compose override (local development)
+docker-compose.override.yml
+
+# Docker volumes data
+volumes/
+
+# ============================================
+# CI/CD and Secrets
+# ============================================
+# Secrets and credentials
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+*.pub
+
+# Azure credentials
+.azure/
+
+# GitHub Actions local testing
+act/
+
+# ============================================
+# IDE and Editors
+# ============================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================
+# Operating System
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ============================================
+# Cloud Provider CLI
+# ============================================
+# Azure CLI
+.azure/
+
+# AWS CLI
+.aws/
+
+# ============================================
+# Temporary and Backup Files
+# ============================================
+*.tmp
+*.bak
+*.backup
+*.old
+*.orig
+
+# ============================================
+# Build and Deployment Artifacts
+# ============================================
+# Build directories
+build/
+dist/
+out/
+target/
+
+# Deployment packages
+*.zip
+*.tar.gz
+*.rar
+
+# ============================================
+# Testing
+# ============================================
+# Test results
+test-results/
+*.test.log
+
+# ============================================
+# Documentation
+# ============================================
+# Generated documentation (if applicable)
+docs/_build/
+site/
