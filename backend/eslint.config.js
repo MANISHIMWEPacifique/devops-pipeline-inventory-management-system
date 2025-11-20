@@ -10,24 +10,19 @@ export default [
       globals: {
         ...globals.node,
         ...globals.es2021,
-        ...globals.jest,
+        ...(globals.jest ?? {}),
       },
     },
     rules: {
-      'indent': ['error', 2],
+      indent: ['error', 2],
       'linebreak-style': ['error', 'unix'],
-      'quotes': ['error', 'single'],
-      'semi': ['error', 'always'],
+      quotes: ['error', 'single'],
+      semi: ['error', 'always'],
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': 'warn',
     },
   },
   {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-    ],
+    ignores: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
   },
 ];
