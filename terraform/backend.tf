@@ -12,14 +12,18 @@ terraform {
     }
   }
 
-  # Using Azure Storage for remote state instead of Terraform Cloud
-  # This will be created automatically on first run
-  backend "azurerm" {
-    resource_group_name  = "terraform-state-rg"
-    storage_account_name = "tfstatedevopsdev"
-    container_name       = "tfstate"
-    key                  = "devops-pipeline.tfstate"
-  }
+  # NOTE: Using local state due to Azure for Students policy restrictions
+  # The state file will be stored locally in terraform.tfstate
+  # 
+  # If you want to use remote state later, uncomment the backend block below
+  # and run: terraform init -migrate-state
+  #
+  # backend "azurerm" {
+  #   resource_group_name  = "terraform-state-rg"
+  #   storage_account_name = "YOUR_STORAGE_ACCOUNT_NAME"
+  #   container_name       = "tfstate"
+  #   key                  = "devops-pipeline.tfstate"
+  # }
 }
 
 provider "azurerm" {
