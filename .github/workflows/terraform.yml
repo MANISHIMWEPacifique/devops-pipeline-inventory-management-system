@@ -13,12 +13,8 @@ on:
   workflow_dispatch:
 
 env:
-  # IMPORTANT: Replace YOUR-ORG-NAME with your actual Terraform Cloud Organization name
-  TF_CLOUD_ORGANIZATION: "YOUR-ORG-NAME" 
   # Set the workspace name to match your Terraform configuration
   TF_WORKSPACE: "devops-pipeline-infrastructure"
-  # This environment variable is used for legacy TFC authentication (cli_config_credentials_token is preferred)
-  TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
 
 jobs:
   # =============================================================================
@@ -31,6 +27,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -100,6 +101,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
