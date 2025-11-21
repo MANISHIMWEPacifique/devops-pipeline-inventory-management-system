@@ -132,4 +132,4 @@ jobs:
       - name: Scan Ansible playbooks
         uses: ansible/ansible-lint@main
         with:
-          targets: ansible/playbooks/
+          args: ansible/playbooks/
