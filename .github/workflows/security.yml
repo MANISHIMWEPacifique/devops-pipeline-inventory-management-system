@@ -14,25 +14,24 @@ permissions:
   actions: read
 
 jobs:
-
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Run npm audit on backend
         working-directory: ./backend
         run: |
           npm audit --audit-level=moderate --json > backend-audit.json || true
-
+      
       - name: Run npm audit on frontend
         working-directory: ./frontend
         run: |
           npm audit --audit-level=moderate --json > frontend-audit.json || true
-
+      
       - name: Upload audit results
         uses: actions/upload-artifact@v4
         with:
@@ -41,34 +40,32 @@ jobs:
             backend/backend-audit.json
             frontend/frontend-audit.json
 
-
   sast-scan:
     name: Static Application Security Testing
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
-
+      
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-
 
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+      
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
         continue-on-error: true
@@ -78,21 +75,20 @@ jobs:
           head: ${{ github.ref_name }}
           extra_args: --only-verified --fail
 
-
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Build backend image
         run: docker build -t devops-backend:scan ./backend
-
+      
       - name: Build frontend image
         run: docker build -t devops-frontend:scan ./frontend
-
+      
       - name: Run Trivy on backend
         uses: aquasecurity/trivy-action@master
         with:
@@ -102,7 +98,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
-
+      
       - name: Run Trivy on frontend
         uses: aquasecurity/trivy-action@master
         with:
@@ -113,29 +109,28 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
-
   iac-security:
     name: Infrastructure as Code Security
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
           working_directory: terraform
           format: sarif
           soft_fail: false
-
+      
       - name: Upload tfsec results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: terraform/tfsec.sarif
-
+      
       - name: Scan Ansible playbooks
-        uses: ansible/ansible-lint-action@main
+        uses: ansible/ansible-lint@main
         with:
           targets: ansible/playbooks/
