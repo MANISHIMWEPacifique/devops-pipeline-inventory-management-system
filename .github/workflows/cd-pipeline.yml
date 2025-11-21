@@ -113,6 +113,19 @@ jobs:
           ansible-galaxy collection install azure.azcollection
           ansible-galaxy collection install community.docker
 
+      - name: Validate deployment prerequisites
+        run: |
+          if [ -z "${{ secrets.VM_PUBLIC_IP }}" ]; then
+            echo "❌ Error: VM_PUBLIC_IP secret is not set"
+            echo "Please ensure Terraform has run successfully and VM_PUBLIC_IP is configured in repository secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "❌ Error: SSH_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ All required secrets are configured"
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
