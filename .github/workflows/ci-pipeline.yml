@@ -93,16 +93,16 @@ jobs:
   # CD JOB: Apply and Destroy (Run manually via workflow_dispatch)
   # =============================================================================
   apply_and_destroy:
-    name: 'Terraform Apply/Destroy'
+    name: 'Terraform Apply/Destroy (${{ github.event.inputs.action }})'
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
+    if: github.event_name == 'workflow_dispatch' 
     needs: validate_and_plan
-    environment: ${{ github.event.inputs.environment || 'dev' }}
+    environment: ${{ github.event.inputs.environment }}
 
     env:
       PROJECT_NAME: devopspipeline
       ADMIN_USERNAME: azureuser
-      ENVIRONMENT_NAME: ${{ github.event.inputs.environment || 'dev' }}
+      ENVIRONMENT_NAME: ${{ github.event.inputs.environment }} 
       # 💥 CRITICAL FIX: Expose Terraform Cloud API Token for 'terraform init' authentication
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
@@ -131,14 +131,10 @@ jobs:
           path: ${{ env.TF_WORKING_DIR }}
 
       - name: Terraform Apply (Controlled Execution)
-        if: github.event.inputs.action == 'apply' || github.event_name == 'push'
+        if: github.event.inputs.action == 'apply'
         run: |
           terraform apply \
             -auto-approve \
-            -var="project_name=${{ env.PROJECT_NAME }}" \
-            -var="environment=${{ env.ENVIRONMENT_NAME }}" \
-            -var="admin_username=${{ env.ADMIN_USERNAME }}" \
-            -var="ssh_public_key=${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}" \
             tfplan
         working-directory: ${{ env.TF_WORKING_DIR }}
         
