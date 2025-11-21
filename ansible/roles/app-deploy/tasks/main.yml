@@ -22,6 +22,29 @@
     mode: '0644'
 
 - name: Create environment file
+  template:
+    src: .env.j2
+    dest: /opt/inventory-app/.env
+    owner: "{{ ansible_user }}"
+    mode: '0600'
+
+- name: Pull latest images
+  community.docker.docker_compose_v2:
+    project_src: /opt/inventory-app
+    pull: always
+
+- name: Start application containers
+  community.docker.docker_compose_v2:
+    project_src: /opt/inventory-app
+    state: present
+    recreate: always
+    remove_orphans: true
+
+- name: Wait for backend to be ready
+  uri:
+    url: "http://localhost:5000/health"
+    status_code: 200
+  register: backend_result
   until: backend_result.status == 200
   retries: 30
   delay: 2

@@ -36,13 +36,13 @@ jobs:
   validate_and_plan:
     name: 'Terraform Validate & Plan'
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     env:
       # Default variables from terraform/variables.tf
       PROJECT_NAME: devopspipeline
       ADMIN_USERNAME: azureuser
-      ENVIRONMENT_NAME: dev # Default environment for CI validation
+      ENVIRONMENT_NAME: ${{ github.event.inputs.environment || 'dev' }}
       # 💥 CRITICAL FIX: Expose Terraform Cloud API Token for 'terraform init' authentication
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
       # Explicitly set Azure credentials for Terraform backend auth
