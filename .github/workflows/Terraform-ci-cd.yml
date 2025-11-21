@@ -27,7 +27,7 @@ on:
         type: string
 
 env:
-  TF_WORKING_DIR: ./terraform  # Your Terraform code folder
+  TF_WORKING_DIR: ./terraform  # Your Terraform code folder
 
 jobs:
   # =============================================================================
@@ -43,8 +43,8 @@ jobs:
       PROJECT_NAME: devopspipeline
       ADMIN_USERNAME: azureuser
       ENVIRONMENT_NAME: dev # Default environment for CI validation
-      # 💥 FIX: Expose Terraform Cloud API Token for 'terraform init' authentication
-      TF_API_TOKEN: ${{TF_API_TOKEN }} 
+      # ✅ FIX APPLIED: Correctly referencing the GitHub Secret
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
     steps:
       - name: Checkout Code
@@ -92,6 +92,8 @@ jobs:
           path: ${{ env.TF_WORKING_DIR }}/tfplan
           retention-days: 1
 
+---
+
   # =============================================================================
   # CD JOB: Apply and Destroy (Run manually via workflow_dispatch)
   # =============================================================================
@@ -109,7 +111,7 @@ jobs:
       ADMIN_USERNAME: azureuser
       # Use environment input from the manual trigger
       ENVIRONMENT_NAME: ${{ github.event.inputs.environment }} 
-      # 💥 FIX: Expose Terraform Cloud API Token for 'terraform init' authentication
+      # This was already correct
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
     steps:
