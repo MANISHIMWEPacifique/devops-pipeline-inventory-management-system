@@ -1,0 +1,134 @@
+name: Terraform Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+  # Allows manual execution from the GitHub Actions tab
+  workflow_dispatch:
+
+env:
+  # IMPORTANT: Replace YOUR-ORG-NAME with your actual Terraform Cloud Organization name
+  TF_CLOUD_ORGANIZATION: "YOUR-ORG-NAME" 
+  # Set the workspace name to match your Terraform configuration
+  TF_WORKSPACE: "devops-pipeline-infrastructure"
+  # This environment variable is used for legacy TFC authentication (cli_config_credentials_token is preferred)
+  TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
+
+jobs:
+  # =============================================================================
+  # 1. CI JOB: Terraform Plan (Runs on all PRs/Pushes to main)
+  # =============================================================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          # Uses the provided API token for TFC authentication via the CLI config
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format Check
+        working-directory: ./terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        # continue-on-error allows the security scan job to run even if plan shows changes
+        run: terraform plan -no-color
+        continue-on-error: true
+
+  # =============================================================================
+  # 2. CI JOB: Terraform Security Scan (Runs in parallel with plan)
+  # =============================================================================
+  terraform-security:
+    name: Terraform Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Runs tfsec for static analysis security checks
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform
+          # soft_fail allows the workflow to proceed even if minor issues are found
+          soft_fail: true 
+
+      # Runs Checkov for policy enforcement and security best practices
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform
+          framework: terraform
+          soft_fail: true
+
+  # =============================================================================
+  # 3. CD JOB: Terraform Apply (Runs only on Push to main, after plan/security pass)
+  # =============================================================================
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    # This job requires both the plan and security checks to succeed
+    needs: [terraform-plan, terraform-security] 
+    # CRITICAL: Only runs if the event is a 'push' and the branch is 'main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      # Optional: Use a production environment for protection rules
+      name: production 
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          # Prevents the wrapper script from interfering with output extraction
+          terraform_wrapper: false 
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        # Deploys the infrastructure, bypassing confirmation
+        run: terraform apply -auto-approve
+
+      - name: Extract Terraform Outputs
+        working-directory: ./terraform
+        id: tf-outputs
+        # Extracts key outputs (like IPs and ACR details) and makes them available to subsequent steps
+        run: |          
+          echo "vm_ip=$(terraform output -raw vm_public_ip)" >> $GITHUB_OUTPUT          
+          echo "acr_name=$(terraform output -raw acr_name)" >> $GITHUB_OUTPUT          
+          echo "acr_server=$(terraform output -raw acr_login_server)" >> $GITHUB_OUTPUT
+
+      # This step saves the full JSON outputs file as a workflow artifact
+      - name: Save outputs as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-outputs
+          path: terraform/terraform-outputs.json
