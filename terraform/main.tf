@@ -173,7 +173,7 @@ resource "azurerm_linux_virtual_machine" "main" {
 
 # Container Registry
 resource "azurerm_container_registry" "main" {
-  name                = "${var.project_name}${var.environment}acr"
+  name                = "${var.project_name}${var.environment}acr${random_string.suffix.result}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic" # Consider 'Standard' or 'Premium' for production/geo-replication
