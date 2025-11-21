@@ -27,7 +27,8 @@ on:
         type: string
 
 env:
-  TF_WORKING_DIR: ./terraform  # Your Terraform code folder
+  # FIX 1: Quoted path to ensure only './terraform' is used
+  TF_WORKING_DIR: './terraform' 
 
 jobs:
   # =============================================================================
@@ -43,7 +44,7 @@ jobs:
       PROJECT_NAME: devopspipeline
       ADMIN_USERNAME: azureuser
       ENVIRONMENT_NAME: dev # Default environment for CI validation
-      # ✅ FIX APPLIED: Correctly referencing the GitHub Secret
+      # FIX 2: Correctly referencing the GitHub Secret for TFC auth
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
     steps:
@@ -53,13 +54,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          # Ensure you use the same version as your team
           terraform_version: 1.8.0 
 
       - name: Azure CLI Login
         uses: azure/login@v1
         with:
-          # Required for Azure provider authentication. Needs AZURE_CREDENTIALS secret.
           creds: ${{ secrets.AZURE_CREDENTIALS }} 
 
       - name: Terraform Init (Now Authenticates with TFC)
@@ -111,7 +110,7 @@ jobs:
       ADMIN_USERNAME: azureuser
       # Use environment input from the manual trigger
       ENVIRONMENT_NAME: ${{ github.event.inputs.environment }} 
-      # This was already correct
+      # Already correct
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }} 
 
     steps:
