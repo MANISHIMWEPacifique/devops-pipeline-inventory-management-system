@@ -1,0 +1,52 @@
+---
+- name: Install monitoring tools
+  apt:
+    name:
+      - prometheus-node-exporter
+      - sysstat
+      - docker.io   # ensure docker is installed for container status
+    state: present
+    update_cache: yes
+
+- name: Enable and start node exporter
+  systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: yes
+
+- name: Create system monitoring script
+  copy:
+    content: |
+      #!/bin/bash
+      echo "=== System Status ==="
+
+      # CPU Usage
+      cpu_idle=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+      echo "CPU Usage: ${cpu_idle}%"
+
+      # Memory Usage
+      mem_used=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
+      echo "Memory Usage: $mem_used"
+
+      # Disk Usage
+      disk_used=$(df -h | awk '$NF=="/"{printf "%s", $5}')
+      echo "Disk Usage: $disk_used"
+
+      # Docker Containers
+      if command -v docker &> /dev/null; then
+          echo "Docker Containers:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+      else
+          echo "Docker not installed or not running."
+      fi
+    dest: /usr/local/bin/system-status.sh
+    mode: '0755'
+
+- name: Verify monitoring script works
+  command: /usr/local/bin/system-status.sh
+  register: system_status
+  ignore_errors: yes
+
+- name: Show monitoring output
+  debug:
+    var: system_status.stdout_lines

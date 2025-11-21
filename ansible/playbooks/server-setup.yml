@@ -1,0 +1,42 @@
+---
+- name: Configure DevOps Application Server
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # Azure Container Registry (from environment or defaults)
+    acr_name: "{{ lookup('env', 'ACR_NAME') }}"
+    acr_login_server: "{{ lookup('env', 'ACR_LOGIN_SERVER') }}"
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+
+    # Image names (static)
+    backend_image_name: "devops-backend"
+    frontend_image_name: "devops-frontend"
+
+  tasks:
+    - name: Display target host information
+      debug:
+        msg: "Configuring {{ inventory_hostname }} ({{ ansible_host }})"
+
+  roles:
+    - security
+    - docker
+    - app-deploy
+
+  post_tasks:
+    - name: Wait for frontend health endpoint
+      uri:
+        url: "http://localhost:3000"
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 10
+      delay: 5
+
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "Deployment completed successfully 🎉"
+          - "Frontend URL: http://{{ ansible_host }}:3000"
+          - "Backend URL: http://{{ ansible_host }}:5000/api"
