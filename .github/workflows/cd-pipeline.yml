@@ -131,7 +131,25 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VM_PUBLIC_IP }} >> ~/.ssh/known_hosts
+          
+          # Retry ssh-keyscan with timeout
+          echo "Scanning SSH keys for ${{ secrets.VM_PUBLIC_IP }}..."
+          for i in {1..5}; do
+            if ssh-keyscan -H -T 10 ${{ secrets.VM_PUBLIC_IP }} >> ~/.ssh/known_hosts 2>/dev/null; then
+              echo "✅ SSH key scan successful"
+              break
+            else
+              echo "⏳ Attempt $i/5 failed, retrying in 10s..."
+              sleep 10
+            fi
+          done
+          
+          # Verify known_hosts was populated
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "❌ Failed to scan SSH keys after 5 attempts"
+            echo "VM might not be ready or SSH port (22) might not be accessible"
+            exit 1
+          fi
 
       - name: Create Inventory File
         run: |
