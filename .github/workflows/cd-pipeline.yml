@@ -126,6 +126,36 @@ jobs:
           fi
           echo "✅ All required secrets are configured"
 
+      - name: Wait for VM to be ready
+        run: |
+          echo "🔍 Checking if VM is reachable at ${{ secrets.VM_PUBLIC_IP }}..."
+          
+          # Wait for VM to respond to ping or SSH port
+          MAX_WAIT=300  # 5 minutes
+          ELAPSED=0
+          INTERVAL=10
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Check if SSH port is open using nc (netcat) or timeout
+            if timeout 5 bash -c "echo > /dev/tcp/${{ secrets.VM_PUBLIC_IP }}/22" 2>/dev/null; then
+              echo "✅ VM is reachable! SSH port 22 is open."
+              break
+            else
+              echo "⏳ VM not ready yet (${ELAPSED}s/${MAX_WAIT}s), waiting..."
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED + INTERVAL))
+            fi
+          done
+          
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "❌ VM did not become reachable within 5 minutes"
+            echo "Possible issues:"
+            echo "  - VM is not running (check Terraform apply succeeded)"
+            echo "  - NSG rules blocking port 22"
+            echo "  - Incorrect IP address: ${{ secrets.VM_PUBLIC_IP }}"
+            exit 1
+          fi
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
