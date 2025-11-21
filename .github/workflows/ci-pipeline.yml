@@ -120,13 +120,16 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }} 
 
-      - name: Cleanup Pre-existing Resources (Stateless Workaround)
-        if: github.event.inputs.action == 'apply' || github.event_name == 'push'
-        run: |
-          echo "Deleting resource group to ensure clean state..."
-          az group delete --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT_NAME }}-rg --yes || true
-          echo "Deletion completed."
-        working-directory: ${{ env.TF_WORKING_DIR }} 
+      # DISABLED: This step deletes the ENTIRE resource group on every push
+      # Causes: New IP addresses, new ACR names, complete infrastructure recreation
+      # Solution: Remove this step and use proper Terraform state management
+      # - name: Cleanup Pre-existing Resources (Stateless Workaround)
+      #   if: github.event.inputs.action == 'apply' || github.event_name == 'push'
+      #   run: |
+      #     echo "Deleting resource group to ensure clean state..."
+      #     az group delete --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT_NAME }}-rg --yes || true
+      #     echo "Deletion completed."
+      #   working-directory: ${{ env.TF_WORKING_DIR }}
 
       - name: Terraform Init (Download existing state)
         run: terraform init
