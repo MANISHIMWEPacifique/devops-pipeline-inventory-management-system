@@ -12,12 +12,13 @@ terraform {
     }
   }
 
-  cloud { 
-    organization = "devops-pipeline-org" # <--- Confirm this is your actual organization name
-    
-    workspaces { 
-      name = "devops-pipeline-infrastructure" 
-    } 
+  # Using Azure Storage for remote state instead of Terraform Cloud
+  # This will be created automatically on first run
+  backend "azurerm" {
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "tfstatedevopsdev"
+    container_name       = "tfstate"
+    key                  = "devops-pipeline.tfstate"
   }
 }
 
