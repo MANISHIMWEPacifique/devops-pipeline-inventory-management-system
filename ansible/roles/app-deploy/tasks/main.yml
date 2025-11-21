@@ -20,14 +20,6 @@
     owner: "{{ ansible_user }}"
     mode: '0644'
 
-# REMOVED: .env file is not needed since docker-compose.yml already has all environment variables
-# - name: Create environment file
-#   template:
-#     src: .env.j2
-#     dest: /opt/inventory-app/.env
-#     owner: "{{ ansible_user }}"
-#     mode: '0600'
-
 - name: Stop existing containers (if any)
   community.docker.docker_compose_v2:
     project_src: /opt/inventory-app
@@ -89,15 +81,6 @@
   debug:
     var: container_logs.stdout_lines
   when: docker_result.failed is defined and docker_result.failed
-
-- name: Check if containers are running
-  shell: docker ps --filter "name=inventory-" --format "{{.Names}}: {{.Status}}"
-  become: yes
-  register: running_containers
-
-- name: Display running containers
-  debug:
-    var: running_containers.stdout_lines
 
 - name: Fail if containers didn't start
   fail:
