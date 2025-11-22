@@ -62,6 +62,8 @@ jobs:
         with:
           context: ./frontend
           push: true
+          build-args: |
+            REACT_APP_API_URL=/api
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/inventory-frontend:${{ steps.meta.outputs.version }}
             ${{ secrets.ACR_LOGIN_SERVER }}/inventory-frontend:latest
