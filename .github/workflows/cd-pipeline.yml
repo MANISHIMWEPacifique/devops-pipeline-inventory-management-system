@@ -212,9 +212,14 @@ jobs:
           sleep 25
           curl -f http://${{ secrets.VM_PUBLIC_IP }}:5000/health
 
-      - name: Verify Frontend
+      - name: Verify Frontend (direct)
         run: |
           curl -f http://${{ secrets.VM_PUBLIC_IP }}:3000
+
+      - name: Verify Nginx Proxy on Port 80
+        run: |
+          echo "Testing Nginx reverse proxy on port 80..."
+          curl -f http://${{ secrets.VM_PUBLIC_IP }}
 
   post-deployment:
     name: Post Deployment Tests
@@ -222,13 +227,23 @@ jobs:
     needs: deploy
 
     steps:
-      - name: Test Frontend
+      - name: Test Frontend (direct)
         run: curl -f http://${{ secrets.VM_PUBLIC_IP }}:3000
 
-      - name: Test Backend API
+      - name: Test Nginx Proxy
+        run: |
+          echo "Testing application through Nginx proxy..."
+          curl -f http://${{ secrets.VM_PUBLIC_IP }}
+
+      - name: Test Backend API (direct)
         run: |
           curl -f http://${{ secrets.VM_PUBLIC_IP }}:5000/health
           curl -f http://${{ secrets.VM_PUBLIC_IP }}:5000/api/inventory
+
+      - name: Test Backend API (through Nginx)
+        run: |
+          echo "Testing API through Nginx proxy..."
+          curl -f http://${{ secrets.VM_PUBLIC_IP }}/api/inventory
 
       - name: Deployment Success Notification
         run: echo "🎉 Deployment successful!"

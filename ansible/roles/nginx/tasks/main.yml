@@ -6,12 +6,17 @@
     update_cache: yes
   become: yes
 
+- name: Stop Nginx temporarily
+  systemd:
+    name: nginx
+    state: stopped
+  become: yes
+
 - name: Remove default Nginx site
   file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   become: yes
-  notify: Reload Nginx
 
 - name: Create Nginx configuration for inventory app
   template:
@@ -21,7 +26,6 @@
     group: root
     mode: '0644'
   become: yes
-  notify: Reload Nginx
 
 - name: Enable inventory app site
   file:
@@ -29,9 +33,13 @@
     dest: /etc/nginx/sites-enabled/inventory-app
     state: link
   become: yes
-  notify: Reload Nginx
 
-- name: Ensure Nginx is started and enabled
+- name: Test Nginx configuration
+  command: nginx -t
+  become: yes
+  changed_when: false
+
+- name: Start and enable Nginx
   systemd:
     name: nginx
     state: started
