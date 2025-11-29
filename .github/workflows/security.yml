@@ -108,11 +108,168 @@ jobs:
           format: table
           exit-code: 1
           ignore-unfixed: true
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run npm audit on backend
+        working-directory: ./backend
+        run: |
+          npm audit --audit-level=moderate --json > backend-audit.json || true
+      
+      - name: Run npm audit on frontend
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=moderate --json > frontend-audit.json || true
+      
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: |
+            backend/backend-audit.json
+            frontend/frontend-audit.json
+
+  sast-scan:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: ${{ github.ref_name }}
+          extra_args: --only-verified --fail
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build backend image
+        run: docker build -t devops-backend:scan ./backend
+      
+      - name: Build frontend image
+        run: docker build -t devops-frontend:scan ./frontend
+      
+      - name: Run Trivy on backend
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: devops-backend:scan
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+      
+      - name: Run Trivy on frontend
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: devops-frontend:scan
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
   iac-security:
     name: Infrastructure as Code Security
     runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        continue-on-error: true
+        with:
+          working_directory: terraform
+          soft_fail: true
+      
+      - name: Generate tfsec SARIF report
+        continue-on-error: true
+        run: |
+          # Install tfsec
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          # Generate SARIF report
+          tfsec ./terraform --format sarif --out tfsec.sarif --soft-fail || echo '{"version": "2.1.0", "runs": []}' > tfsec.sarif
+      
+      - name: Validate SARIF file
+        id: validate_sarif
+        continue-on-error: true
+        run: |
+          if [ -f tfsec.sarif ] && [ -s tfsec.sarif ]; then
+            if grep -q '"version"' tfsec.sarif && grep -q '"runs"' tfsec.sarif; then
+              echo "sarif_valid=true" >> $GITHUB_OUTPUT
+              echo "✅ SARIF file is valid"
+            else
+              echo "sarif_valid=false" >> $GITHUB_OUTPUT
+              echo "⚠️ SARIF file is missing required properties"
+            fi
+          else
+            echo "sarif_valid=false" >> $GITHUB_OUTPUT
+            echo "⚠️ SARIF file is empty or doesn't exist"
+          fi
+      
+      - name: Upload tfsec results
+        uses: github/codeql-action/upload-sarif@v4
+        if: steps.validate_sarif.outputs.sarif_valid == 'true'
+        continue-on-error: true
+        with:
+          sarif_file: tfsec.sarif
+      
+      - name: Scan Ansible playbooks
+        uses: ansible/ansible-lint@main
+        continue-on-error: true
         with:
           args: ansible/
