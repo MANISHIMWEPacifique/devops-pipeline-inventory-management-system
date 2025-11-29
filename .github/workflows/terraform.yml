@@ -1,21 +1,3 @@
-name: Terraform Infrastructure
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'terraform/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'terraform/**'
-  # Allows manual execution from the GitHub Actions tab
-  workflow_dispatch:
-
-env:
-  # Set the workspace name to match your Terraform configuration
-  TF_WORKSPACE: "devops-pipeline-infrastructure"
-
 jobs:
   # =============================================================================
   # 1. CI JOB: Terraform Plan (Runs on all PRs/Pushes to main)
