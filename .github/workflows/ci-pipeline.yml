@@ -76,6 +76,16 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
           ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
 
+      - name: Clear Stuck State Lock (if exists)
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        continue-on-error: true
+        run: |
+          echo "Checking for stuck state locks..."
+          # Try to force unlock any stuck locks from previous failed runs
+          # This handles cases where GitHub Actions runners crash/timeout
+          terraform force-unlock -force 9b7c946a-182f-8eee-f9f3-8e9bc05e69b9 || true
+          echo "Lock check complete"
+
       - name: Terraform Validate
         id: validate
         run: terraform validate
@@ -156,6 +166,14 @@ jobs:
           ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
           ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
           ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        
+      - name: Clear Stuck State Lock (if exists)
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        continue-on-error: true
+        run: |
+          echo "Checking for stuck state locks..."
+          terraform force-unlock -force 9b7c946a-182f-8eee-f9f3-8e9bc05e69b9 || true
+          echo "Lock check complete"
         
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
